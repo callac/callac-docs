@@ -28,6 +28,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
+          cache-dependency-path: subdir/package-lock.json
  
       # 打包成静态文件
       - name: Build
