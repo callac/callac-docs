@@ -1,9 +1,0 @@
-version: "3"
-
-services:
-  callac-docs:
-    build: .
-    container_name: callac-docs
-    restart: unless-stopped
-    ports:
-      - 5173:5173
