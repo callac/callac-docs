@@ -1,0 +1,25 @@
+{
+  "name": "callac-docs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "serve": "vitepress serve docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@vueuse/core": "^9.13.0",
+    "plugin-transform-react-jsx": "^0.0.1-security",
+    "vitepress": "^1.0.0-alpha.46",
+    "vue": "^3.2.47",
+    "vue-ghui": "1.0.2"
+  },
+  "devDependencies": {
+    "prettier": "^2.8.4",
+    "typescript": "*"
+  }
+}
