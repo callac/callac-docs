@@ -3,10 +3,10 @@ name: GitHub Actions Build and Deploy
 on:
   # 手动运行工作流程（workflow_dispatch 事件触发器配置后可以在actions下手动运行工作流）
   workflow_dispatch: {}
-  # # 下面是自动执行
-  # push:
-  #   branches:
-  #     - master 
+  # 下面是自动执行
+  push:
+    branches:
+      - master 
  
 jobs:
   build-and-deploy:
