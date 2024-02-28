@@ -16,4 +16,13 @@ export const sidebar: DefaultTheme.Sidebar = {
       items: [{ text: '虚拟机迁移', link: '/virtualization/pve-虚拟机迁移-pve2esxi' }],
     },
   ],
+  '/other/': [
+    {
+      text: 'mysql',
+      // collapsed: true,
+      items: [
+        { text: '创建主从', link: '/other/MySQL-创建主从' },
+      ],
+    },
+  ],
 };
