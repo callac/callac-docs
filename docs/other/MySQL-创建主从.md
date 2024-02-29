@@ -44,6 +44,34 @@ apt-get install percona-xtrabackup-80 -y
 
 ```
 
+## 离线安装 
+
+### percona-xtrabackup
+centos
+>- percona-xtrabackup2.x版本支持mysql5
+>- percona-xtrabackup8.x版本支持mysql8
+>- mysql5.7.38，系统centos7
+
+```
+wget https://www.percona.com/downloads/XtraBackup/Percona-XtraBackup-2.4.4/binary/redhat/7/x86_64/percona-xtrabackup-24-2.4.4-1.el7.x86_64.rpm
+yum localinstall percona-xtrabackup-24-2.4.4-1.el7.x86_64.rpm
+```
+> 如果提示Requires: libev.so.4()(64bit)，需要安装libev4
+```
+wget ftp5.gwdg.de/pub/opensuse/repositories/home:/rudi_m/RHEL_7/x86_64/libev4-4.24-8.1.x86_64.rpm
+yum -y localinstall libev4-4.24-8.1.x86_64.rpm
+```
+
+### percona-xtrabackup
+centos
+```
+http://vault.centos.org/6.6/os/x86_64/Packages/nc-1.84-22.el6.x86_64.rpm
+rpm -iUv nc-1.84-22.el6.x86_64.rpm
+```
+
+
+
+
 ## 从库停止数据库，删除数据目录
 > 停止
 ```
@@ -81,6 +109,15 @@ FLUSH PRIVILEGES;
 ```
 xtrabackup --decompress --remove-original --parallel=4 --target-dir=/var/lib/mysql
 ```
+> 问题1
+> xtrabackup-解压备份文件报错sh: qpress: command not found
+> 原因是decompress解压缺少工具qpress解压办法
+``` 
+wget -d --user-agent="Mozilla/5.0 (Windows NT x.y; rv:10.0) Gecko/20100101 Firefox/10.0" https://docs-tencentdb-1256569818.cos.ap-guangzhou.myqcloud.com/qpress-11-linux-x64.tar
+tar xvf qpress-11-linux-x64.tar
+cp qpress /usr/bin
+ ```
+
 
 ## 从库服务器执行 prepare 操作。做数据预备
 > xtrabackup要求在备份完成后执行prepare，以便应用任何未完成的日志并准备好启动数据库。建议在目标服务器上使用尽可能多的内存，以免导致内存耗尽

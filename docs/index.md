@@ -2,8 +2,8 @@
 layout: home
 hero:
   name: Callac
-  text: 人生大事
-  tagline: Callac,一个写起玩的移动端组件库
+  text: 时光匆匆
+  tagline: 那些年，那些人，那些事儿
   image:
     src: logo.png
     alt: logo
