@@ -105,7 +105,7 @@ import{_ as s,c as n,o as a,N as e}from"./chunks/framework.a5f3ff40.js";const d=
 <span class="line"><span style="color:#A6ACCD;">        check_port</span></span>
 <span class="line"><span style="color:#A6ACCD;">    }</span></span>
 <span class="line"><span style="color:#A6ACCD;">}</span></span>
-<span class="line"><span style="color:#A6ACCD;"></span></span></code></pre></div><h3 id="generate-sh" tabindex="-1"><a id="generate.sh">generate.sh</a> <a class="header-anchor" href="#generate-sh" aria-label="Permalink to &quot;&lt;a id=&quot;generate.sh&quot;&gt;generate.sh&lt;/a&gt;&quot;">​</a></h3><blockquote><p>这里有个问题，就是这个 generate.sh 需要先手动赋予可执行权限，不然多个Keepalived同时启用，有点问题</p></blockquote><div class="language-"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki material-theme-palenight"><code><span class="line"><span style="color:#A6ACCD;">#!/bin/bash</span></span>
+<span class="line"><span style="color:#A6ACCD;"></span></span></code></pre></div><h3 id="generate-sh" tabindex="-1">generate.sh <a class="header-anchor" href="#generate-sh" aria-label="Permalink to &quot;generate.sh&quot;">​</a></h3><blockquote><p>这里有个问题，就是这个 generate.sh 需要先手动赋予可执行权限，不然多个Keepalived同时启用，有点问题</p></blockquote><div class="language-"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki material-theme-palenight"><code><span class="line"><span style="color:#A6ACCD;">#!/bin/bash</span></span>
 <span class="line"><span style="color:#A6ACCD;"></span></span>
 <span class="line"><span style="color:#A6ACCD;"># 检查模板文件是否存在</span></span>
 <span class="line"><span style="color:#A6ACCD;">if [ ! -f /etc/keepalived/keepalived.conf.template ] || [ ! -f /etc/keepalived/check_port.sh.template ]; then</span></span>
