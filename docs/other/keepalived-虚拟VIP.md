@@ -131,7 +131,7 @@ vrrp_instance VI_1 {
 }
 ```
 
-### <a id="generate.sh">generate.sh</a>
+### generate.sh
 
 > 这里有个问题，就是这个 generate.sh 需要先手动赋予可执行权限，不然多个Keepalived同时启用，有点问题
 
