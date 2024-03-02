@@ -12,7 +12,7 @@
 
 ### docker-compose
 
-> 使用时，需要提前给 [generate.sh](#generate.sh) 赋予可执行权限(`chmod +x keepalived/generate.sh`)，如果是单个Keepalived跑，不需要执行赋予权限的操作。
+> 使用时，需要提前给 [generate.sh](#generate-sh) 赋予可执行权限(`chmod +x keepalived/generate.sh`)，如果是单个Keepalived跑，不需要执行赋予权限的操作。
 
 ```
 version: '3'
@@ -133,7 +133,7 @@ vrrp_instance VI_1 {
 
 ### generate.sh
 
-> 这里有个问题，就是这个 generate.sh 需要先手动赋予可执行权限，不然多个Keepalived同时启用，有点问题
+> 这里有个问题，就是 generate.sh 需要先手动赋予可执行权限，不然多个Keepalived同时启用，有点问题
 
 ```
 #!/bin/bash

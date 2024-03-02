@@ -28,5 +28,12 @@ export const sidebar: DefaultTheme.Sidebar = {
         { text: '创建主从', link: '/other/MySQL-创建主从' },
       ],
     },
+    {
+      text: '其它',
+      // collapsed: true,
+      items: [
+        { text: '高可用-keepalived', link: '/other/keepalived-虚拟VIP' },
+      ],
+    },
   ],
 };
