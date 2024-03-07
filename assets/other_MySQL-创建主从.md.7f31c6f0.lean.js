@@ -1,1 +1,0 @@
-import{_ as a,c as s,o as n,N as l}from"./chunks/framework.a5f3ff40.js";const A=JSON.parse('{"title":"MySQL创建主从","description":"","frontmatter":{},"headers":[],"relativePath":"other/MySQL-创建主从.md"}'),e={name:"other/MySQL-创建主从.md"},p=l("",51),o=[p];function t(c,r,i,C,d,u){return n(),s("div",null,o)}const b=a(e,[["render",t]]);export{A as __pageData,b as default};
