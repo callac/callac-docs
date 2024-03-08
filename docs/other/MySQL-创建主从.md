@@ -54,7 +54,7 @@ services:
     volumes:
       - ./data:/var/lib/mysql
       - ./logs:/var/log/mysql
-      # - ./conf/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./conf/my.cnf:/etc/mysql/conf.d/my.cnf
       # - ./init:/docker-entrypoint-initdb.d
 
   mysql-b:
@@ -235,7 +235,7 @@ docker start mysql-b
 ***
 ***
 
-### 增量备份
+### 增量备份和恢复
 
 #### 创建
 
@@ -258,24 +258,24 @@ compact = 0
 recover_binlog_info = 1
 ```
 
-基于docker增量备份命令
+基于docker增量备份命令  
 (1). 全量备份
 ```
-docker run --rm --network mysql02_default  -v /data/database/backups:/backups --volumes-from mysql5.7-uat01 percona/percona-xtrabackup:2.4 \
+docker run --rm --network mysql-compose_default  -v /data/database/backups:/backups --volumes-from mysql-a percona/percona-xtrabackup:2.4 \
 xtrabackup --backup --target-dir=/backups/base  \
---host=mysql5.7-uat01 --port=3306 --user=root --password='123456' 
+--host=mysql-a --port=3306 --user=back --password='backups'
 ```
 (2). 增量备份（基于全量）
  ```
- docker run --rm --network mysql02_default  -v /data/database/backups:/backups --volumes-from mysql5.7-uat01 percona/percona-xtrabackup:2.4 \
+docker run --rm --network mysql-compose_default  -v /data/database/backups:/backups --volumes-from mysql-a percona/percona-xtrabackup:2.4 \
 xtrabackup --backup --target-dir=/backups/inc1  --incremental-basedir=/backups/base \
---host=mysql5.7-uat01 --port=3306 --user=root --password='123456' 
+--host=mysql-a --port=3306 --user=back --password='backups' 
 ```
 (3). 增量备份（基于增量）
 ```
-docker run --rm --network mysql02_default  -v /data/database/backups:/backups --volumes-from mysql5.7-uat01 percona/percona-xtrabackup:2.4 \
+docker run --rm --network mysql-compose_default  -v /data/database/backups:/backups --volumes-from mysql-a percona/percona-xtrabackup:2.4 \
 xtrabackup --backup --target-dir=/backups/inc2  --incremental-basedir=/backups/inc1 \
---host=mysql5.7-uat01  --user=root --password='123456' 
+--host=mysql-a  --user=back --password='backups'
 ```
  
 
@@ -285,3 +285,434 @@ xtrabackup --backup --target-dir=/backups/inc2  --incremental-basedir=/backups/i
 > /backups/inc2  
 
 #### 准备
+
+> 官方文档：https://docs.percona.com/percona-xtrabackup/2.4/backup_scenarios/incremental_backup.html#preparing-the-incremental-backups 
+> 
+> 要点总结：  
+> 
+> * 如果不使用xtrabackup --apply-log-only选项来防止回滚阶段，那么增量备份将是无用的。回滚事务后，不能应用进一步的增量备份。增量备份的xtrabackup --prepare步骤与完全备份不同。在完全备份中，执行两种类型的操作以使数据库保持一致:根据数据文件从日志文件重放已提交的事务，回滚未提交的事务。在准备增量备份时，必须跳过未提交事务的回滚，因为在备份时未提交的事务可能正在进行中，并且很可能在下一次增量备份中提交。您应该使用xtrabackup --apply-log-only选项来防止回滚阶段。   
+> * 即使该操作跳过回滚阶段，也可以安全地恢复此备份。如果您恢复它并启动MySQL, InnoDB检测到回滚阶段没有执行，它将在后台执行回滚阶段。此操作与启动时的崩溃恢复相同。另外，MySQL会通知您数据库没有正常关闭。  
+> * 在合并除最后一个增量之外的所有增量时，应该使用xtrabbackup --apply-log-only。这就是为什么前一行没有包含xtrabackup --apply-log-only选项的原因。即使在最后一步中使用了xtrabackup --apply-log-only，备份仍然是一致的，但是在这种情况下，服务器将执行回滚阶段。  
+> * Percona XtraBackup不支持使用同一个增量备份目录准备两份备份。不要对同一个增量备份目录  (--incremental-dir的值)多次运行xtrabbackup --prepare命令。(大致原因应该是先做了准备，看不到准确的lsn？)  
+> * 增量准备日志序列号应该与前面看到的基本备份的to_lsn匹配。  
+
+(1). 准备全量备份
+```
+docker run --rm -v /data/database/backups:/backups percona/percona-xtrabackup:2.4 \
+xtrabackup --prepare --apply-log-only --target-dir=/backups/base
+```
+> 根据要点 --apply-log-only 在增量备份准备步骤中必须存在，来阻止回滚步骤，最后一步准备步骤不用--apply-log-only这个参数，当然加了也可以，恢复步骤过后mysql日志会报错而已，数据是正常的
+
+(2). 准备增量备份
+```
+docker run --rm -v /data/database/backups:/backups percona/percona-xtrabackup:2.4 \
+xtrabackup --prepare --apply-log-only --target-dir=/backups/base --incremental-dir=/backups/inc1
+```
+> 这将增量文件应用于/data/backups/base中的文件，从而将它们向前滚到增量备份的时间。然后，它像往常一样对结果应用重做日志。注意--target-dir参数，最终数据在/data/backups/base目录下，而不是增量目录下.
+
+(3). 准备增量备份2
+```
+docker run --rm -v /data/database/backups:/backups percona/percona-xtrabackup:2.4 \
+xtrabackup --prepare --target-dir=/backups/base --incremental-dir=/backups/inc2
+```
+> 一旦准备好，增量备份与完整备份相同，并且可以以相同的方式恢复它们。
+
+#### 恢复
+可以参考：[恢复备份](#恢复备份)
+
+
+### 压缩备份
+#### 创建
+
+> 官方文档：https://docs.percona.com/percona-xtrabackup/2.4/backup_scenarios/compressed_backup.html#creating-compressed-backups
+>
+> 要点总结：
+> 
+> * 为了进行压缩备份，你需要使用xtrabbackup -compress选项  
+> * 如果你想加快压缩速度，你可以使用并行压缩，它可以通过xtrabbackup -compress-threads选项启用。  
+> * 其实在以上创建备份步骤中加入 --compress --compress-threads=4 参数即可  
+>
+> 下面是创建全量压缩备份示例，创建增量压缩备份类似： 
+```
+docker run --rm --network mysql-compose_default  -v /data/database/backups:/backups --volumes-from mysql-a percona/percona-xtrabackup:2.4 \
+xtrabackup --backup --compress --compress-threads=4 --target-dir=/backups/compressed/  \
+--host=mysql-a --port=3306 --user=back --password='backups' 
+```
+> 
+> 这里还有个疑问，就是文件都压缩了，增量备份的--incremental-basedir里的文件还能读到吗？
+>
+> 经过实测是不影响增量备份的，因为增量备份只读取xtrabackup_checkpoints里的信息，而xtrabackup_checkpoints文件是不压缩的 
+>
+> 下面再演示一个mysql是装在虚拟机非docker上的示例
+```
+docker run --rm -v /data/backups:/backups -v /etc/my.cnf:/etc/my.cnf -v /var/lib/mysql:/var/lib/mysql percona/percona-xtrabackup:2.4
+xtrabackup --defaults-file=/etc/my.cnf --backup --compress --compress-threads=4 --target-dir=/backups/base --datadir=/var/lib/mysql
+--host=192.168.252.17 --port=3306 --user=back --password='backups'
+```
+>
+> 参数详解：
+> 
+> 这里挂载了宿主机的 my.cnf，/var/lib/mysql 数据卷，好让xtrabbackup读取到mysql服务器的文件
+> 
+> --defaults-file 参数必须放在第一个
+> 
+> --host参数必须写宿主机的ip地址，不能写127.0.0.1，否则会识别为容器内的地址
+>
+> 这里还有个坑需要提一下，就是我在实际备份时经常报错
+> 
+```
+> InnoDB: Last flushed lsn: 3375345258517 load_index lsn 3379255303757  
+> InnoDB: An optimized (without redo logging) DDLoperation has been performed. All modified pages may not have been flushed to the disk yet. 
+PXB will not be able take a consistent backup. Retry the backup operation
+```
+> 后来，用压缩备份把压缩线程设置为4个 --compress-threads=4就不报错了  
+> 个人分析原因可能是，写入数据速度太快，xtrabbackup读取和redo进程跟不上导致的，设置为4个线程，就跟上了
+```
+> InnoDB: Last flushed lsn: 3375345258517 load_index lsn 3379255303757
+> InnoDB: An optimized (without redo logging) DDLoperation has been performed. All modified pages may not have been flushed to the disk yet. 
+PXB will not be able take a consistent backup. Retry the backup operation
+```
+>
+> xtrabackup在备份innoDB数据是，有2种线程：
+>
+> redo拷贝线程和ibd数据拷贝线程。
+> 
+> xtrabackup进程开始执行后，会启动一个redo拷贝的线程，用于从最新的checkpoint点开始顺序拷贝redo.log；再启动ibd数据拷贝线程，进行拷贝ibd数据。
+但导致刷新redo 丢失的情况下，那备份就会失败  
+
+> 刷新大量数据，或则 redo刷新跟不上  
+> 导致刷新redo丢失的情况下，那备份就会失败  
+> 参考文档：http://www.manongjc.com/detail/58-zcmrmijyfjvqazw.html  
+
+#### 准备
+
+> 官方文档：https://docs.percona.com/percona-xtrabackup/2.4/backup_scenarios/compressed_backup.html#preparing-the-backup
+> 
+> 要点总结：
+> 
+> * Xtrabackup --parallel可以与Xtrabackup --decompress选项一起使用，以同时解压缩多个文件。
+> * Percona xtrabbackup不会自动删除压缩文件。为了清理备份目录，使用xtrabbackup --remove-original选项。如果使用xtrabackup --copy-back或xtrabackup --move-back，则未删除的文件不会被复制或移动到数据目录中。(也就是说解压后解压的文件和压缩文件在一个文件夹的问题)
+> 
+> 解压缩命令：
+```
+docker run --rm  -v /data/database/backups:/backups percona/percona-xtrabackup:2.4 \
+xtrabackup --decompress --parallel=4 --target-dir=/backups/compressed/
+```
+>准备备份：
+```
+docker run --rm -v /data/database/backups:/backups percona/percona-xtrabackup:2.4 \
+xtrabackup --prepare --target-dir=/backups/compressed/
+```
+
+#### 恢复
+
+> 官方文档：https://docs.percona.com/percona-xtrabackup/2.4/backup_scenarios/compressed_backup.html#restoring-the-backup
+> 
+> 没什么好说的，和全量备份恢复步骤一样，需要注意的是这里建议用xtrabackup自带的恢复命令恢复，这样不会连压缩的文件一起拷贝出来，如果准备和恢复不在一个服务器，可以在准备的服务器上先用--copy-back 命令把恢复文件拷贝出来，再传到要恢复的服务器。迁移完要注意文件权限问题。
+```
+docker run --rm -v /data/database/backups:/backups --volumes-from mysql-b percona/percona-xtrabackup:2.4 \
+xtrabackup --copy-back  --target-dir=/backups/compressed/ --datadir=/var/lib/mysql 
+ ```
+> 
+> 参考文档：https://blog.csdn.net/omage/article/details/123532620
+
+### 部分备份
+
+> 官方文档：https://docs.percona.com/percona-xtrabackup/2.4/xtrabackup_bin/partial_backups.html?h=partial+backups
+> 
+> (1). 表备份  
+> 
+> Xtrabackup支持mysql服务器在启用innodb_file_per_table选项时进行部分备份。  
+> 有三种方法可以创建部分备份:  
+> 1.用正则表达式匹配表名  
+> 2.在文件中提供表名列表  
+> 3.提供数据库列表  
+
+> 如果在备份过程中删除了任何匹配或列出的表，则xtrabackup将失败。
+> 请勿复制已准备好的备份。恢复部分备份应该通过导入表来完成，而不是使用--copy-back选项。不建议在执行部分备份后再执行增量备份。
+> 尽管在某些情况下可以通过复制文件来进行恢复，但在许多情况下，这可能会导致数据库不一致，因此不推荐使用这种方法。
+>
+> 第一种方法涉及到xtrabackup --tables选项。该选项的值是一个正则表达式，它以databasename.tablename的形式匹配完全限定的表名(包括数据库名)。
+如果只备份test数据库中的表，可以使用如下命令:
+```
+$ xtrabackup --backup --datadir=/var/lib/mysql --target-dir=/data/backups/ \
+--tables="^test[.].*"
+```
+>
+> 只备份表test.T1时，可以使用如下命令:
+>
+``` 
+$ xtrabackup --backup --datadir=/var/lib/mysql --target-dir=/data/backups/ \
+--tables="^test[.]t1"
+```
+> 
+> Xtrabackup --tables-file指定一个文件，该文件可以包含多个表名，文件中每行一个表名。只备份文件中指定的表。名称精确匹配，区分大小写，没有模式或正则表达式匹配。表名必须是完全限定的，在databasename中。表的格式。
+> 
+> (2). 库备份
+> 
+> Xtrabackup --databases接受一个以空格分隔的数据库和表的列表，以databasename[.tablename]格式进行备份。除了这个列表，确保指定mysql、sys和performance_schema数据库。在使用xtrabbackup—copy-back恢复数据库时需要这些数据库。
+如果表是在备份开始后创建的，那么在-prepare步骤中处理的表也可以添加到备份中，即使它们没有被参数显式列出。
+```
+$ xtrabackup --databases='mysql sys performance_schema ...'
+```
+>
+> Xtrabackup --databases-file指定一个文件，该文件可以包含databasename[中的多个数据库和表。表名]形式，文件中每行一个元素名。名称精确匹配，区分大小写，没有模式或正则表达式匹配。
+>
+> (3).准备备份  
+> 当您在部分备份上使用xtrabackup --prepare选项时，您将看到关于不存在的表的警告。这是因为这些表存在于InnoDB的数据字典中，但是对应的。ibd文件不存在。它们没有被复制到备份目录中。这些表将从数据字典中删除，当您恢复备份并启动InnoDB时，它们将不再存在，并且不会导致任何错误或警告打印到日志文件中。
+
+### 备份脚本
+
+一共需要三个脚本：
+
+全量备份脚本：full-backup-mysql.sh
+
+增量备份脚本：incremental-backup-mysql.sh
+
+文件同步脚本：rsync.sh
+
+![](https://cdn.jsdelivr.net/gh/callac/markdown-image@main/img/202403081703296.png)
+
+full-backup-mysql.sh 内容如下：
+> 
+> * 备份成功自动调用rsync.sh文件同步脚本
+> * 脚本带有部分备份命令，需要备份指定库可以调整注释
+> * 脚本会删除一个星期前的全量备份文件
+> * 脚本会删除所有的增量备份文件
+```bash
+#!/bin/sh
+#########################################################################
+## Description: Mysql全量备份脚本
+## File Name: full-backup-mysql.sh
+## Author: lol
+## mail:
+## Created Time: 2023年11月23日
+##########################################################################
+today=`date +%Y%m%d`
+datetime=`date +%Y%m%d-%H-%M-%S`
+dockerNetwork=mysql-compose_default
+basePath=/data/backups/data
+dockerName=mysql-a
+HOST=mysql-a
+PORT=3306
+USER=back
+PASSWD=backups
+logfilePath=$basePath
+logfile=$logfilePath/full_$datetime.log
+
+
+
+pid=`ps -ef | grep -v "grep" |grep -i xtrabackup|awk '{print $2}'|head -n 1`
+if [ -z $pid ]
+then
+
+  echo " start full backup database " >> $logfile
+  OneWeekAgo=`date -d "1 week ago"  +%Y%m%d`
+  path=$basePath/full_$datetime
+  mkdir -p $path
+  last_backup=`cat $logfilePath/last_backup_sucess.log| head -1`
+  echo " last backup is ===> " $last_backup >> $logfile
+  
+#----------Partial Backups-----------
+docker run --rm --network $dockerNetwork -v $basePath:$basePath --volumes-from $dockerName percona/percona-xtrabackup:2.4 \
+xtrabackup --backup --target-dir=$path \
+--host=$HOST --port=$PORT --user=$USER --password=$PASSWD >> $logfile 2>&1
+
+echo "docker run --rm --network $dockerNetwork -v $basePath:$basePath -v $dataDir:$dataDir --volumes-from $dockerName percona/percona-xtrabackup:2.4 \
+xtrabackup --backup --target-dir=$path --datadir=$dataDir \
+--host=$HOST --port=$PORT --user=$USER --password=$PASSWD "
+
+
+#chown admin.docker $path -R
+
+  ret=`tail -n 2 $logfile |grep "completed OK"|wc -l`
+  if [ "$ret" =  1 ] ; then
+    echo 'delete expired backup ' $basePath/full_$OneWeekAgo*  >> $logfile
+    rm -rf $basePath/full_$OneWeekAgo*
+    rm -f $logfilePath/full_$OneWeekAgo*.log
+    rm -rf $basePath/incr_*
+    rm -f $logfilePath/incr_*.log
+    echo $path > $logfilePath/last_backup_sucess.log
+    sh /data/backups/script/rsync.sh $logfile
+  else
+    echo 'backup failure ,no delete expired backup'  >> $logfile
+  fi
+else
+   echo "****** xtrabackup in backup database  ****** "  >> $logfile
+fi
+```
+
+incremental-backup-mysql.sh 内容如下：
+
+> * 备份成功自动调用rsync.sh文件同步脚本
+> 
+> * 脚本带有部分备份命令，需要备份指定库可以调整注释
+> 
+> * 脚本会删除一个星期前的备份文件
+
+``` bash
+#!/bin/sh
+#########################################################################
+## Description: Mysql增量备份脚本
+## File Name: incremental-backup-mysql.sh
+## Author: lol
+## mail:
+## Created Time: 2023年11月23日
+##########################################################################
+
+today=`date +%Y%m%d`
+datetime=`date +%Y%m%d-%H-%M-%S`
+dockerNetwork=mysql-compose_default
+basePath=/data/backups/data
+dockerName=mysql-a
+HOST=mysql-a
+PORT=3306
+USER=back
+PASSWD=backups
+logfilePath=$basePath
+logfile=$logfilePath/full_$datetime.log
+
+
+
+#dataBases="mysql sys performance_schema ..."
+
+pid=`ps -ef | grep -v "grep" |grep -i xtrabackup|awk '{print $2}'|head -n 1`
+if [ -z $pid ]
+then
+  echo " start incremental backup database " >> $logfile
+  OneWeekAgo=`date -d "1 week ago"  +%Y%m%d`
+  path=$basePath/incr_$datetime
+  mkdir -p $path
+  last_backup=`cat $logfilePath/last_backup_sucess.log| head -1`
+  echo " last backup is ===> " $last_backup >> $logfile
+#----------Partial Backups-----------
+
+
+docker run --rm  --network $dockerNetwork -e TZ=Asia/Shanghai -v $basePath:$basePath  --volumes-from $dockerName percona/percona-xtrabackup:2.4 \
+xtrabackup --backup --compress --compress-threads=4 --target-dir=$path --incremental-basedir=$last_backup \
+--host=$HOST --port=$PORT --user=$USER --password=$PASSWD  >> $logfile 2>&1
+
+#chown admin.docker $path -R
+
+  ret=`tail -n 2 $logfile |grep "completed OK"|wc -l`
+  if [ "$ret" =  1 ] ; then
+    echo 'delete expired backup ' $basePath/incr_$OneWeekAgo*  >> $logfile
+    rm -rf $basePath/incr_$OneWeekAgo*
+    rm -f $logfilePath/incr_$OneWeekAgo*.log
+    echo $path > $logfilePath/last_backup_sucess.log
+    sh /data/backups/script/rsync.sh $logfile
+  else
+    echo 'backup failure ,no delete expired backup'  >> $logfile
+  fi
+else
+   echo "****** xtrabackup in backup database  ****** "  >> $logfile
+fi
+```
+
+ rsync.sh 内容如下
+
+ ``` bash
+ #!/bin/bash
+datetime=`date +%Y%m%d-%H-%M-%S`
+logfile=$1
+echo "$datetime Rsync backup mysql start "  >> $logfile
+rsync -e "ssh -p22" -avpgolr  --delete /data/backups bigtree@10.30.30.6:/data/backup_data/bigtree/DB_bak/10.30.30.8/ >> $logfile 2>&1
+
+ret=`tail -n 1 $logfile |grep "total size"|wc -l`
+if [ "$ret" =  1 ] ; then
+        echo "$datetime Rsync backup mysql finish " >> $logfile
+else
+        echo "$datetime Rsync backup failure ,pls sendmail"  >> $logfile
+fi
+ ```
+
+rsync脚本说明
+
+> * 添加 --delete参数：这将删除只存在于目标目录、不存在于源目录的文件。  
+> 这样可以让备份机器跟随源文件机器一起删除过期文件   
+> 参考文档：https://zhuanlan.zhihu.com/p/572643499
+> * 存放脚本的script目录在backups目录下，可以连脚本一起传输到备份机器，方便故障恢复
+> * 需要在备份机器上新建账号bigtree，并只赋予备份目录权限，做对等性验证用于免密传输  
+> 在备份机器上 新建账号  
+> 参考文档：https://p3terx.com/archives/add-normal-users-with-adduser-and-useradd.html
+>
+> 
+```
+useradd -m -s /bin/bash bigtree
+```
+> 在被同步机器上新建备份目录  
+>
+> 
+```
+mkdir -p /data/backup_data/bigtree/DB_bak/10.30.30.8/
+```
+>并赋权
+```
+chown -R bigtree:bigtree /data/backup_data/bigtree 
+```
+>
+> 在源文件机器上
+>
+> 对等性验证
+>
+> 参考文档：https://blog.csdn.net/qq_40006446/article/details/119951071
+> 
+> 产生密码文件，输入这个命令之后 一路回车  
+```
+ssh-keygen
+```
+> 拷贝这个密码文件到服务器主机上：  
+```
+ssh-copy-id -i ~/.ssh/id_rsa.pub bigtree@10.30.30.6
+```
+> 
+> * 同步与被同步机器都要安装rsync  
+> https://blog.csdn.net/weixin_46039745/article/details/132057919
+>
+> * rsync使用其他问题  
+> https://cloud.tencent.com/developer/article/2038648
+
+crontab -e 配置如下：
+
+> 1.周日晚上3点全量备份  
+> 2.周一至周六晚上3点增量备份  
+> 3.这里使用root用户调用定时任务  
+> 4.crontab知识补充：  
+> https://zhuanlan.zhihu.com/p/594333950  
+>
+> https://crontab.guru/  
+> 
+> https://www.runoob.com/w3cnote/linux-crontab-tasks.html
+```
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+
+# For details see man 4 crontabs
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name  command to be executed
+
+
+0 3 * * mon-sat sh /data/backups/script/incremental-backup-mysql.sh
+0 3 * * sun sh /data/backups/script/full-backup-mysql.sh
+```
+
+## 创建主从
+> xtrabackup 备份后的数据，会有一个名为 xtrabackup_binlog_info 文件，里面记录了备份的 bin log 文件的名称及职位。
+>
+> 我们可以通过这个文件，将从节点的 bin log 位置，设置成主节点的 bin log 位置。
+> 登录 MySQL，执行从库创建命令
+```
+mysql > change master to master_host='主服务器 IP',master_user='master',master_password='master_pass',master_log_file='bin-log 文件名',master_log_pos=position;
+mysql > start slave;
+mysql > show slave status\G;
+```
+> 在 slave 的状态中看到 Slave_IO_Running 和 Slave_SQL_Running 都为 Yes，表示从库已经连接到了主库，并且正在复制数据。
+
