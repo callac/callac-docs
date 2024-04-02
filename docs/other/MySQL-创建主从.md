@@ -139,7 +139,7 @@ skip_slave_start = 1
 > * 创建具有完整备份所需的最低权限的数据库用户的SQL示例如下:
 ``` sql
 mysql> CREATE USER 'back'@'%' IDENTIFIED BY 'backups';
-mysql> GRANT SELECT, RELOAD, LOCK TABLES, PROCESS, REPLICATION CLIENT ON *.* TO 'back'@'%';
+mysql> GRANT SELECT, RELOAD, LOCK TABLES, PROCESS, REPLICATION SLAVE ON *.* TO 'back'@'%';
 mysql> FLUSH PRIVILEGES;
 ```
 
