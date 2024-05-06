@@ -139,7 +139,7 @@ skip_slave_start = 1
 > * 创建具有完整备份所需的最低权限的数据库用户的SQL示例如下:
 ``` sql
 mysql> CREATE USER 'back'@'%' IDENTIFIED BY 'backups';
-mysql> GRANT SELECT, RELOAD, LOCK TABLES, PROCESS, REPLICATION SLAVE ON *.* TO 'back'@'%';
+mysql> GRANT SELECT, RELOAD, LOCK TABLES, PROCESS, REPLICATION CLIENT ON *.* TO 'back'@'%';
 mysql> FLUSH PRIVILEGES;
 ```
 
@@ -710,6 +710,15 @@ MAILTO=root
 > 我们可以通过这个文件，将从节点的 bin log 位置，设置成主节点的 bin log 位置。
 > 登录 MySQL，执行从库创建命令
 ```
+
+# 创建从库的权限需要改一下。 将CLIENT 换成 SLAVE 
+
+mysql> CREATE USER 'back'@'%' IDENTIFIED BY 'backups';
+mysql> GRANT SELECT, RELOAD, LOCK TABLES, PROCESS, REPLICATION SLAVE ON *.* TO 'back'@'%';
+mysql> FLUSH PRIVILEGES;
+
+
+
 mysql > change master to master_host='主服务器 IP',master_user='master',master_password='master_pass',master_log_file='bin-log 文件名',master_log_pos=position;
 mysql > start slave;
 mysql > show slave status\G;
