@@ -114,7 +114,7 @@ skip_slave_start = 1
 ```
 (1). 查看mysql服务器所在网络  
 >`docker inspect mysql-a` 
-![alt text](14aa44f3-de5c-4bbe-a4e7-e930b34cfb59.jpeg)
+![](https://cdn.jsdelivr.net/gh/callac/markdown-image@main/img/202406271043462.jpeg)
 >另外还有个更简单的方式就是通过--host参数直接指定当前服务器ip来登录，免去了查看mysql docker网络的步骤
     
 (2). my.cnf文件和datadir位置

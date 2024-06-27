@@ -33,6 +33,7 @@ export const sidebar: DefaultTheme.Sidebar = {
       // collapsed: true,
       items: [
         { text: '高可用-keepalived', link: '/other/keepalived-虚拟VIP' },
+        { text: 'multipass-使用', link: '/other/multipass-使用笔记' },
       ],
     },
   ],
