@@ -1,0 +1,1 @@
+import{_ as a,c as s,o as l,N as n}from"./chunks/framework.a5f3ff40.js";const C=JSON.parse('{"title":"multipass","description":"","frontmatter":{},"headers":[],"relativePath":"other/multipass-使用笔记.md"}'),e={name:"other/multipass-使用笔记.md"},t=n("",18),p=[t];function o(i,c,r,u,h,d){return l(),s("div",null,p)}const A=a(e,[["render",o]]);export{C as __pageData,A as default};
