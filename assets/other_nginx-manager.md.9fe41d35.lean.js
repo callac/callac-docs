@@ -1,0 +1,1 @@
+import{_ as s,c as a,o as n,N as p}from"./chunks/framework.a5f3ff40.js";const g=JSON.parse('{"title":"Nginx Proxy 可视化管理界面","description":"","frontmatter":{},"headers":[],"relativePath":"other/nginx-manager.md"}'),l={name:"other/nginx-manager.md"},e=p("",49),o=[e];function r(t,c,i,C,A,d){return n(),a("div",null,o)}const m=s(l,[["render",r]]);export{g as __pageData,m as default};
