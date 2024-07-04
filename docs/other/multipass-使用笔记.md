@@ -1,4 +1,4 @@
-      
+<!--       
 # multipass
 
 ## 概述
@@ -464,4 +464,4 @@ multipass launch --name vm4 -c 4 -m 4G -d 300G --network en0
 > 遇到识别不出wifi 网卡的情况，可以利用Hyper-V 管理器新建一个虚拟交换机。
 
 
-> 打开hyper-v管理器。点击【虚拟交换管理器】-【新建虚拟网络交换机】-【外部】-【创建】 然后你勾选一下你的 wifi 无线网卡，然后 名称的话 改成英文吧，比如 en0 。这样应用之后，你再去打印multipass networks 就能识别wifi啦  -->
+> 打开hyper-v管理器。点击【虚拟交换管理器】-【新建虚拟网络交换机】-【外部】-【创建】 然后你勾选一下你的 wifi 无线网卡，然后 名称的话 改成英文吧，比如 en0 。这样应用之后，你再去打印multipass networks 就能识别wifi啦   -->
