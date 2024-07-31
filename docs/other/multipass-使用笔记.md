@@ -363,8 +363,3 @@ multipass set local.[实例名称].memory=8G
 挂载
 
 > multipass mount ./data  master:/data
-
-
-
-
-https://blog.csdn.net/qq_38628046/article/details/139032790
