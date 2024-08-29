@@ -1,0 +1,1 @@
+import{_ as a,o as s,c as e,N as n}from"./chunks/framework.727b779d.js";const h=JSON.parse('{"title":"PVE 中虚机磁盘扩容","description":"","frontmatter":{},"headers":[],"relativePath":"virtualization/pve-磁盘扩容.md"}'),l={name:"virtualization/pve-磁盘扩容.md"},p=n("",50),t=[p];function i(c,o,d,r,g,m){return s(),e("div",null,t)}const u=a(l,[["render",i]]);export{h as __pageData,u as default};
