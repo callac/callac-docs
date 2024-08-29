@@ -14,6 +14,7 @@ export const sidebar: DefaultTheme.Sidebar = {
       text: 'PVE',
       // collapsed: true,
       items: [
+        { text: 'Cloud-init', link: '/virtualization/pve-Cloud-init' },
         { text: '虚拟机迁移', link: '/virtualization/pve-虚拟机迁移-pve2esxi' },
         { text: '磁盘扩容', link: '/virtualization/pve-磁盘扩容' }
       ],
