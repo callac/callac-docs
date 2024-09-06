@@ -80,3 +80,79 @@ qm set 123 --ipconfig0 ip=192.168.253.123/24,gw=192.168.253.1
 > 此外还可以配置 DNS 域等，更多配置项请查看 PVE 官网 [Cloud-Init Support](https://pve.proxmox.com/wiki/Cloud-Init_Support) 。
 
 > 之后启动虚拟机，即可验证之前的配置是否生效。
+
+
+## 关于qm命令
+
+常用选项
+
+```
+qm create    # 创建新的虚拟机
+qm start     # 启动虚拟机
+qm stop      # 停止虚拟机
+qm shutdown  # 优雅地关闭虚拟机
+qm destroy   # 销毁虚拟机
+qm list      # 列出所有虚拟机的状态
+qm show      # 显示虚拟机的详细信息
+qm config    # 显示或修改虚拟机的配置
+qm migrate   # 迁移虚拟机到另一个节点
+qm clone     # 克隆虚拟机
+
+qm resize    # 调整虚拟机磁盘大小
+qm snapshot  # 创建虚拟机快照
+qm rollback  # 恢复到指定的快照状态
+qm template  # 创建虚拟机模板
+qm startall  # 启动所有虚拟机
+qm stopall   # 停止所有虚拟机
+qm move      # 移动虚拟机磁盘
+qm cloneconfig  # 克隆虚拟机配置
+qm status    # 显示虚拟机运行状态
+qm reset     # 重置虚拟机状态
+
+```
+
+qm set
+
+```
+qm set <vmid> [OPTIONS]
+
+General Options:
+  --name <string>             设置虚拟机名称
+  --memory <integer>          设置虚拟机内存大小（以MB为单位）
+  --sockets <integer>         设置虚拟机CPU插槽数
+  --cores <integer>           设置每个插槽的CPU核心数
+  --numa <integer>            启用或禁用NUMA（0或1）
+  --balloon <integer>         设置内存气球设备的目标内存大小（以MB为单位）
+
+Boot Options:
+  --boot <order>              设置启动顺序，例如 order=scsi0;net0
+  --bootdisk <disk>           设置引导磁盘，例如 scsi0
+
+Disk Options:
+  --ide<n> <volume>           添加IDE磁盘，例如 local:iso/debian-10.0.iso
+  --sata<n> <volume>          添加SATA磁盘，例如 local:iso/debian-10.0.iso
+  --scsi<n> <volume>          添加SCSI磁盘，例如 local-lvm:vm-100-disk-0
+  --virtio<n> <volume>        添加VirtIO磁盘，例如 local-lvm:vm-100-disk-0
+  --cdrom <volume>            添加CD-ROM驱动器，例如 local:iso/debian-10.0.iso
+  --delete <device>           删除设备，例如 --delete scsi0
+
+Network Options:
+  --net<n> <model>,bridge=<bridge>[,tag=<vlan>][,firewall=<1|0>]
+                             添加网络设备，例如 virtio,bridge=vmbr0
+
+Serial/USB Options:
+  --serial<n> <model>         添加串行设备，例如 socket
+  --usb<n> <host=<hostaddr>[,vendorid=<id>,productid=<id>,id=<id>]
+                             添加USB设备
+
+Display Options:
+  --vga <type>                设置VGA卡类型，例如 std, qxl, serial0
+
+Other Options:
+  --agent <enabled=1|0>       启用或禁用QEMU Guest Agent
+  --ciuser <username>         设置Cloud-init默认用户
+  --cipassword <password>     设置Cloud-init默认用户密码
+  --cicustom <key=volume>     设置Cloud-init自定义数据，例如 user=local:snippets/my-user-data.yaml
+  --tags <string>             设置虚拟机标签
+
+```

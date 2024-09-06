@@ -5,7 +5,7 @@
 
 链接: [arpl](https://github.com/fbelavenuto/arpl/releases)， 由于我用的是ESXI，避免不必要的转换，直接下载vmdk
 
-https://github.com/RROrg/rr 地址更换为此，型号用的是DS3622XS+
+https://github.com/RROrg/rr 地址更换为此，型号用的是DS3622XS+, 6U32GB
 
 ![](https://cdn.jsdelivr.net/gh/callac/markdown-image@main/img/202306271126945.png)
 
