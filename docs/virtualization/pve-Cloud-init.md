@@ -156,3 +156,60 @@ Other Options:
   --tags <string>             设置虚拟机标签
 
 ```
+
+# 通过命令新建虚拟机
+
+
+```
+# 创建虚拟机
+qm create 18139 --name Kylin-SP3 --cores 4 --memory 8192 --net0 virtio,bridge=vmbr0 
+```
+>  - ID 18139
+>  - 名称 myvm​
+>  - 内存2048MB​
+>  - 网络：使用 virtio​ 网络接口，连接到 vmbr0​ 桥接网络
+>  - CPU虚拟核心2​个
+
+```
+# 添加硬盘
+查看存储池：
+pvesm status
+
+创建硬盘：
+qm set 18139 --scsi0 local-lvm:100
+
+```
+
+>  - 硬盘配置：
+>  - 来源：存储池local-lvm
+>  - 容量：100GB​
+>  - 硬盘格式：scsi0​
+>  - 分配给：VM18139
+
+```
+# 查看配置：
+qm config 18139
+
+# 添加引导设备
+# 准备好系统镜像
+pvesm list local
+
+#挂载到虚拟机的 CD/DVD 驱动器：
+qm set 18139 --cdrom local:iso/Kylin-Server-V10-SP3-General-Release-2303-X86_64.iso
+
+# 注意： 挂载后ide2就是CD/DVD驱动器
+
+# 设置 CD/DVD 驱动器为第一引导项：
+qm set 18139 --boot 'order=ide2;scsi0'
+
+# 启动虚拟机：
+qm start 18139
+
+# 通过Web界面完成装机选项
+
+
+#移除引导设备
+qm set 18139 --boot order=scsi0
+qm set 18139 --delete cdrom #移除CD/DVD
+
+```
